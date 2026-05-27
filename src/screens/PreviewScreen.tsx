@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Alert,
   Image,
@@ -32,23 +32,34 @@ export function PreviewScreen({ route, navigation }: PreviewScreenProps) {
   const [memo, setMemo] = useState('');
   const [printing, setPrinting] = useState(false);
   const [printResult, setPrintResult] = useState<'success' | 'error' | null>(null);
+  const printingRef = useRef(false);
+  const printIdRef = useRef<string | null>(null);
 
   const handlePrint = async () => {
+    if (printingRef.current) return;
+    printingRef.current = true;
     setPrinting(true);
     setPrintResult(null);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
+    if (!printIdRef.current) {
+      printIdRef.current = `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 10)}`;
+    }
+
     try {
-      const result = await printApi.printImage(imageUri, memo || undefined);
+      const result = await printApi.printImage(imageUri, memo || undefined, printIdRef.current);
 
       if (result.success) {
+        const isDup = result.deduplicated;
         setPrintResult('success');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
         setTimeout(() => {
           Alert.alert(
-            '인쇄 완료',
-            `프린터로 전송되었습니다.\n작업 ID: ${result.job_id || result.print_job_id || '-'}`,
+            isDup ? '이미 인쇄됨' : '인쇄 완료',
+            isDup
+              ? '이 사진은 이미 인쇄되었습니다.'
+              : `프린터로 전송되었습니다.\n작업 ID: ${result.job_id || result.print_job_id || '-'}`,
             [
               { text: '로그 보기', onPress: () => navigation.navigate('MainTabs', { screen: 'Logs' }) },
               { text: '계속 촬영', onPress: () => navigation.goBack() },
@@ -62,11 +73,12 @@ export function PreviewScreen({ route, navigation }: PreviewScreenProps) {
       setPrintResult('error');
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       Alert.alert('인쇄 실패', err.message || '서버와 통신할 수 없습니다.', [
-        { text: '재시도', onPress: handlePrint },
+        { text: '재시도', onPress: () => { printingRef.current = false; handlePrint(); } },
         { text: '취소', style: 'cancel' },
       ]);
     } finally {
       setPrinting(false);
+      if (printResult !== 'error') printingRef.current = false;
     }
   };
 

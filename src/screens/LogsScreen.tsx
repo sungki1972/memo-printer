@@ -80,24 +80,11 @@ export function LogsScreen({ navigation }: LogsScreenProps) {
     navigation.navigate('LogDetail', { log });
   };
 
-  const successCount = logs.filter(l => l.status === 'success').length;
-  const failCount = logs.filter(l => l.status === 'failed').length;
-
   const renderHeader = () => (
     <View style={styles.statsBar}>
       <View style={styles.statItem}>
         <Text style={[typography.h2, { color: colors.primary }]}>{total}</Text>
         <Text style={[typography.caption, { color: colors.textTertiary }]}>전체</Text>
-      </View>
-      <View style={styles.statDivider} />
-      <View style={styles.statItem}>
-        <Text style={[typography.h2, { color: colors.success }]}>{successCount}</Text>
-        <Text style={[typography.caption, { color: colors.textTertiary }]}>성공</Text>
-      </View>
-      <View style={styles.statDivider} />
-      <View style={styles.statItem}>
-        <Text style={[typography.h2, { color: colors.error }]}>{failCount}</Text>
-        <Text style={[typography.caption, { color: colors.textTertiary }]}>실패</Text>
       </View>
     </View>
   );

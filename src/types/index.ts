@@ -5,6 +5,7 @@ export interface PrintLog {
   content: string;
   memo: string | null;
   image_url: string | null;
+  image_id: string | null;
   qr_url: string | null;
   viewer_pin: string | null;
   order_id: number | null;
@@ -31,6 +32,8 @@ export interface PrintResponse {
   job_id?: string;
   print_job_id?: string;
   error?: string;
+  deduplicated?: boolean;
+  count?: number;
 }
 
 export interface PrintImageResponse extends PrintResponse {

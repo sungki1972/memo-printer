@@ -2,6 +2,31 @@ import * as FileSystem from 'expo-file-system';
 import { LogsResponse, PrintResponse } from '../types';
 
 const API_BASE = 'https://barcode1.echeil.com';
+const REQUEST_TIMEOUT = 30_000;
+
+function generatePrintId(): string {
+  const ts = Date.now().toString(36);
+  const rand = Math.random().toString(36).substring(2, 10);
+  return `${ts}-${rand}`;
+}
+
+function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs: number = REQUEST_TIMEOUT
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  return fetch(url, { ...options, signal: controller.signal })
+    .catch((err) => {
+      if (err.name === 'AbortError') {
+        throw new Error('서버 응답 시간 초과 (30초). 네트워크를 확인해주세요.');
+      }
+      throw err;
+    })
+    .finally(() => clearTimeout(timer));
+}
 
 class PrintApiService {
   private baseUrl: string;
@@ -10,11 +35,17 @@ class PrintApiService {
     this.baseUrl = baseUrl;
   }
 
-  async printImage(imageUri: string, memo?: string): Promise<PrintResponse> {
+  async printImage(
+    imageUri: string,
+    memo?: string,
+    printId?: string
+  ): Promise<PrintResponse> {
     const filename = imageUri.split('/').pop() || 'photo.jpg';
     const match = /\.(\w+)$/.exec(filename);
     const ext = match ? match[1].toLowerCase() : 'jpg';
     const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
+
+    const dedupId = printId || generatePrintId();
 
     const formData = new FormData();
     formData.append('image', {
@@ -27,13 +58,17 @@ class PrintApiService {
       formData.append('memo', memo);
     }
 
-    const response = await fetch(`${this.baseUrl}/api/print/image`, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
+    const response = await fetchWithTimeout(
+      `${this.baseUrl}/api/print/image`,
+      {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+          'X-Print-Id': dedupId,
+        },
+      }
+    );
 
     if (!response.ok) {
       const text = await response.text();
@@ -59,13 +94,18 @@ class PrintApiService {
       } as any);
     }
 
-    const response = await fetch(`${this.baseUrl}/api/print/images`, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        'Accept': 'application/json',
+    const response = await fetchWithTimeout(
+      `${this.baseUrl}/api/print/images`,
+      {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Accept': 'application/json',
+          'X-Print-Id': generatePrintId(),
+        },
       },
-    });
+      60_000
+    );
 
     if (!response.ok) {
       const text = await response.text();
@@ -76,11 +116,12 @@ class PrintApiService {
   }
 
   async getLogs(page: number = 1, perPage: number = 20): Promise<LogsResponse> {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `${this.baseUrl}/api/logs?page=${page}&per_page=${perPage}`,
       {
         headers: { 'Accept': 'application/json' },
-      }
+      },
+      15_000
     );
 
     if (!response.ok) {
@@ -91,13 +132,14 @@ class PrintApiService {
   }
 
   async reprint(logId: number): Promise<PrintResponse> {
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `${this.baseUrl}/api/print/reprint/${logId}`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'X-Print-Id': generatePrintId(),
         },
       }
     );
@@ -112,7 +154,7 @@ class PrintApiService {
 
   async healthCheck(): Promise<boolean> {
     try {
-      const response = await fetch(this.baseUrl, { method: 'GET' });
+      const response = await fetchWithTimeout(this.baseUrl, { method: 'GET' }, 5_000);
       return response.ok;
     } catch {
       return false;

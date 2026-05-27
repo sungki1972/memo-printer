@@ -187,15 +187,26 @@ export function LogDetailScreen({ route, navigation }: LogDetailScreenProps) {
         )}
       </ScrollView>
 
-      {/* Bottom Action */}
-      <View style={styles.bottomActions}>
-        <Pressable style={styles.reprintButton} onPress={handleReprint} disabled={reprinting}>
-          <PrinterIcon size={22} color={colors.textInverse} />
-          <Text style={[typography.button, { color: colors.textInverse, marginLeft: spacing.sm }]}>
-            재인쇄
-          </Text>
-        </Pressable>
-      </View>
+      {/* Bottom Action — reprint only available for logs with qr_url */}
+      {log.qr_url ? (
+        <View style={styles.bottomActions}>
+          <Pressable style={styles.reprintButton} onPress={handleReprint} disabled={reprinting}>
+            <PrinterIcon size={22} color={colors.textInverse} />
+            <Text style={[typography.button, { color: colors.textInverse, marginLeft: spacing.sm }]}>
+              재인쇄
+            </Text>
+          </Pressable>
+        </View>
+      ) : log.print_type === 'image_print' ? (
+        <View style={styles.bottomActions}>
+          <View style={[styles.reprintButton, { backgroundColor: colors.textTertiary }]}>
+            <MaterialCommunityIcons name="printer-off" size={22} color={colors.textInverse} />
+            <Text style={[typography.button, { color: colors.textInverse, marginLeft: spacing.sm }]}>
+              이미지 인쇄는 재인쇄 불가
+            </Text>
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }

@@ -1,25 +1,69 @@
 {
   "expo": {
-    "name": "print-clean-temp",
-    "slug": "print-clean-temp",
+    "name": "메모 프린터",
+    "slug": "memo-printer",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.echeil.memoprinter",
+      "infoPlist": {
+        "NSCameraUsageDescription": "메모를 촬영하고 인쇄하기 위해 카메라 접근이 필요합니다.",
+        "NSPhotoLibraryUsageDescription": "갤러리에서 이미지를 선택하여 인쇄하기 위해 접근이 필요합니다."
+      }
     },
     "android": {
+      "package": "com.echeil.memoprinter",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#2563EB"
       },
-      "predictiveBackGestureEnabled": false
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.INTERNET",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+        "android.permission.ACCESS_MEDIA_LOCATION",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_MEDIA_VIDEO",
+        "android.permission.READ_MEDIA_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-image",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "메모를 촬영하고 인쇄하기 위해 카메라 접근이 필요합니다."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "갤러리에서 이미지를 선택하여 인쇄하기 위해 접근이 필요합니다."
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "촬영한 사진을 저장하기 위해 접근이 필요합니다.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d23f9b5a-3ea3-4978-b820-4101a43e4b3b"
+      }
+    },
+    "owner": "neolamp"
   }
 }

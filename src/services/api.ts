@@ -1,4 +1,4 @@
-import * as FileSystem from 'expo-file-system';
+import { File, UploadTask, UploadType } from 'expo-file-system';
 import { LogsResponse, PrintResponse } from '../types';
 
 const API_BASE = 'https://barcode1.echeil.com';
@@ -28,6 +28,43 @@ function fetchWithTimeout(
     .finally(() => clearTimeout(timer));
 }
 
+async function uploadFileWithTimeout(
+  url: string,
+  fileUri: string,
+  options: {
+    fieldName: string;
+    headers: Record<string, string>;
+    parameters?: Record<string, string>;
+    mimeType: string;
+  },
+  timeoutMs: number
+) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  const file = new File(fileUri);
+  const task = new UploadTask(file, url, {
+    httpMethod: 'POST',
+    uploadType: UploadType.MULTIPART,
+    fieldName: options.fieldName,
+    mimeType: options.mimeType,
+    headers: options.headers,
+    parameters: options.parameters,
+    signal: controller.signal,
+  });
+
+  try {
+    return await task.uploadAsync();
+  } catch (err: any) {
+    if (err?.name === 'AbortError') {
+      throw new Error('서버 응답 시간 초과. 네트워크를 확인해주세요.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 class PrintApiService {
   private baseUrl: string;
 
@@ -47,72 +84,67 @@ class PrintApiService {
 
     const dedupId = printId || generatePrintId();
 
-    const formData = new FormData();
-    formData.append('image', {
-      uri: imageUri,
-      name: filename,
-      type: mimeType,
-    } as any);
-
-    if (memo) {
-      formData.append('memo', memo);
-    }
-
-    const response = await fetchWithTimeout(
+    const result = await uploadFileWithTimeout(
       `${this.baseUrl}/api/print/image`,
+      imageUri,
       {
-        method: 'POST',
-        body: formData,
+        fieldName: 'image',
+        mimeType,
         headers: {
-          'Accept': 'application/json',
+          Accept: 'application/json',
           'X-Print-Id': dedupId,
         },
-      }
+        parameters: memo ? { memo } : undefined,
+      },
+      REQUEST_TIMEOUT
     );
 
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`인쇄 실패 (${response.status}): ${text}`);
+    if (result.status < 200 || result.status >= 300) {
+      throw new Error(`인쇄 실패 (${result.status}): ${result.body}`);
     }
 
-    return response.json();
+    try {
+      return JSON.parse(result.body);
+    } catch {
+      throw new Error(`인쇄 응답 파싱 실패: ${result.body}`);
+    }
   }
 
   async printImages(imageUris: string[]): Promise<PrintResponse> {
-    const formData = new FormData();
-
+    const results: PrintResponse[] = [];
     for (const uri of imageUris) {
       const filename = uri.split('/').pop() || 'photo.jpg';
       const match = /\.(\w+)$/.exec(filename);
       const ext = match ? match[1].toLowerCase() : 'jpg';
       const mimeType = ext === 'png' ? 'image/png' : 'image/jpeg';
 
-      formData.append('images', {
+      const result = await uploadFileWithTimeout(
+        `${this.baseUrl}/api/print/image`,
         uri,
-        name: filename,
-        type: mimeType,
-      } as any);
-    }
-
-    const response = await fetchWithTimeout(
-      `${this.baseUrl}/api/print/images`,
-      {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Accept': 'application/json',
-          'X-Print-Id': generatePrintId(),
+        {
+          fieldName: 'image',
+          mimeType,
+          headers: {
+            Accept: 'application/json',
+            'X-Print-Id': generatePrintId(),
+          },
         },
-      },
-      60_000
-    );
+        60_000
+      );
 
-    if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`배치 인쇄 실패 (${response.status}): ${text}`);
+      if (result.status < 200 || result.status >= 300) {
+        throw new Error(`배치 인쇄 실패 (${result.status}): ${result.body}`);
+      }
+
+      try {
+        results.push(JSON.parse(result.body));
+      } catch {
+        throw new Error(`배치 인쇄 응답 파싱 실패: ${result.body}`);
+      }
     }
 
-    return response.json();
+    const last = results[results.length - 1];
+    return last ?? ({ success: true } as PrintResponse);
   }
 
   async getLogs(page: number = 1, perPage: number = 20): Promise<LogsResponse> {

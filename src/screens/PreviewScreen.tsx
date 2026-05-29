@@ -14,11 +14,13 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { typography, spacing, radius } from '../theme/typography';
 import { PrinterIcon } from '../components/PrinterIcon';
 import { LoadingOverlay } from '../components/LoadingOverlay';
 import { printApi } from '../services/api';
+import * as history from '../services/historyStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -28,12 +30,14 @@ interface PreviewScreenProps {
 }
 
 export function PreviewScreen({ route, navigation }: PreviewScreenProps) {
+  const insets = useSafeAreaInsets();
   const { imageUri } = route.params;
   const [memo, setMemo] = useState('');
   const [printing, setPrinting] = useState(false);
   const [printResult, setPrintResult] = useState<'success' | 'error' | null>(null);
   const printingRef = useRef(false);
   const printIdRef = useRef<string | null>(null);
+  const savedRef = useRef(false);
 
   const handlePrint = async () => {
     if (printingRef.current) return;
@@ -53,6 +57,22 @@ export function PreviewScreen({ route, navigation }: PreviewScreenProps) {
         const isDup = result.deduplicated;
         setPrintResult('success');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+        // 촬영 후 로컬 기록 저장 — 썸네일(원본 복사) + 메모 + 작업ID
+        if (!savedRef.current) {
+          savedRef.current = true;
+          try {
+            history.add({
+              sourceUri: imageUri,
+              memo,
+              status: 'success',
+              jobId: result.job_id || result.print_job_id || null,
+              printType: 'image_print',
+            });
+          } catch (e) {
+            console.warn('[Preview] 로컬 기록 저장 실패', e);
+          }
+        }
 
         setTimeout(() => {
           Alert.alert(
@@ -94,7 +114,7 @@ export function PreviewScreen({ route, navigation }: PreviewScreenProps) {
       <LoadingOverlay visible={printing} variant="printing" message="프린터로 전송 중..." />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
         <Pressable style={styles.backButton} onPress={handleRetake}>
           <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
         </Pressable>
@@ -149,7 +169,7 @@ export function PreviewScreen({ route, navigation }: PreviewScreenProps) {
       </ScrollView>
 
       {/* Bottom Actions */}
-      <View style={styles.bottomActions}>
+      <View style={[styles.bottomActions, { paddingBottom: insets.bottom + spacing.md }]}>
         <Pressable
           style={styles.retakeButton}
           onPress={handleRetake}

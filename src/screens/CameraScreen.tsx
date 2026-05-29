@@ -13,6 +13,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { typography, spacing, radius } from '../theme/typography';
 
@@ -21,6 +22,7 @@ interface CameraScreenProps {
 }
 
 export function CameraScreen({ navigation }: CameraScreenProps) {
+  const insets = useSafeAreaInsets();
   const [facing, setFacing] = useState<CameraType>('back');
   const [flash, setFlash] = useState(false);
   const [capturing, setCapturing] = useState(false);
@@ -130,7 +132,7 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
           flash={flash ? 'on' : 'off'}
         >
           {/* Top controls */}
-          <View style={styles.topBar}>
+          <View style={[styles.topBar, { paddingTop: insets.top + spacing.sm }]}>
             <Pressable style={styles.controlButton} onPress={toggleFlash}>
               <MaterialCommunityIcons
                 name={flash ? 'flash' : 'flash-off'}
@@ -162,7 +164,7 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
           <Text style={styles.guideText}>메모를 프레임 안에 맞춰주세요</Text>
 
           {/* Bottom controls */}
-          <View style={styles.bottomBar}>
+          <View style={[styles.bottomBar, { paddingBottom: insets.bottom + spacing.lg }]}>
             <Pressable style={styles.sideButton} onPress={handlePickImage}>
               <MaterialCommunityIcons name="image-multiple-outline" size={28} color="#FFF" />
               <Text style={[typography.caption, { color: '#FFF', marginTop: 4 }]}>갤러리</Text>
@@ -178,12 +180,13 @@ export function CameraScreen({ navigation }: CameraScreenProps) {
               </Pressable>
             </Animated.View>
 
-            <View style={styles.sideButton}>
-              <MaterialCommunityIcons name="printer" size={28} color="rgba(255,255,255,0.3)" />
-              <Text style={[typography.caption, { color: 'rgba(255,255,255,0.3)', marginTop: 4 }]}>
-                촬영 후 인쇄
-              </Text>
-            </View>
+            <Pressable
+              style={styles.sideButton}
+              onPress={() => navigation.navigate('MainTabs', { screen: 'Logs' })}
+            >
+              <MaterialCommunityIcons name="history" size={28} color="#FFF" />
+              <Text style={[typography.caption, { color: '#FFF', marginTop: 4 }]}>기록</Text>
+            </Pressable>
           </View>
         </CameraView>
       )}

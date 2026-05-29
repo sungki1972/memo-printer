@@ -42,10 +42,26 @@ export interface PrintImageResponse extends PrintResponse {
   image_id?: string;
 }
 
+/** 로컬(온디바이스) 인쇄 기록 — 썸네일/CRUD/오프라인 지원의 데이터 원천 */
+export interface LocalPrint {
+  id: string;
+  /** 영구 영역에 복사된 이미지 file:// URI */
+  imageUri: string;
+  memo: string;
+  status: 'success' | 'failed';
+  /** 서버 print_job_id (있으면) */
+  jobId: string | null;
+  printType: string;
+  error?: string | null;
+  /** ISO 8601 */
+  createdAt: string;
+}
+
 export type RootStackParamList = {
   MainTabs: undefined;
   Preview: { imageUri: string };
   LogDetail: { log: PrintLog };
+  HistoryDetail: { id: string };
 };
 
 export type MainTabParamList = {

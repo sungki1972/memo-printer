@@ -1,20 +1,22 @@
 import React from 'react';
-import { Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { CameraScreen } from '../screens/CameraScreen';
 import { PreviewScreen } from '../screens/PreviewScreen';
 import { LogsScreen } from '../screens/LogsScreen';
 import { LogDetailScreen } from '../screens/LogDetailScreen';
+import { HistoryDetailScreen } from '../screens/HistoryDetailScreen';
 import { RootStackParamList, MainTabParamList } from '../types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 function MainTabs() {
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={{
@@ -25,8 +27,8 @@ function MainTabs() {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: Platform.OS === 'android' ? 64 : 84,
-          paddingBottom: Platform.OS === 'android' ? 8 : 24,
+          height: 56 + insets.bottom,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
           paddingTop: 8,
           elevation: 8,
           shadowColor: colors.shadow,
@@ -54,9 +56,9 @@ function MainTabs() {
         name="Logs"
         component={LogsScreen}
         options={{
-          tabBarLabel: '인쇄 로그',
+          tabBarLabel: '기록',
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="printer" size={size} color={color} />
+            <MaterialCommunityIcons name="image-multiple" size={size} color={color} />
           ),
         }}
       />
@@ -77,6 +79,11 @@ export function AppNavigator() {
         <Stack.Screen
           name="LogDetail"
           component={LogDetailScreen}
+          options={{ animation: 'slide_from_right' }}
+        />
+        <Stack.Screen
+          name="HistoryDetail"
+          component={HistoryDetailScreen}
           options={{ animation: 'slide_from_right' }}
         />
       </Stack.Navigator>

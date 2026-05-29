@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 import { typography, spacing, radius } from '../theme/typography';
 import { StatusBadge } from '../components/StatusBadge';
@@ -55,6 +56,7 @@ function InfoRow({ icon, label, value }: { icon: string; label: string; value: s
 }
 
 export function LogDetailScreen({ route, navigation }: LogDetailScreenProps) {
+  const insets = useSafeAreaInsets();
   const { log } = route.params;
   const [reprinting, setReprinting] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -95,7 +97,7 @@ export function LogDetailScreen({ route, navigation }: LogDetailScreenProps) {
       <LoadingOverlay visible={reprinting} variant="printing" message="재인쇄 중..." />
 
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
           <MaterialCommunityIcons name="arrow-left" size={24} color={colors.text} />
         </Pressable>
@@ -189,7 +191,7 @@ export function LogDetailScreen({ route, navigation }: LogDetailScreenProps) {
 
       {/* Bottom Action — reprint only available for logs with qr_url */}
       {log.qr_url ? (
-        <View style={styles.bottomActions}>
+        <View style={[styles.bottomActions, { paddingBottom: insets.bottom + spacing.md }]}>
           <Pressable style={styles.reprintButton} onPress={handleReprint} disabled={reprinting}>
             <PrinterIcon size={22} color={colors.textInverse} />
             <Text style={[typography.button, { color: colors.textInverse, marginLeft: spacing.sm }]}>
@@ -198,7 +200,7 @@ export function LogDetailScreen({ route, navigation }: LogDetailScreenProps) {
           </Pressable>
         </View>
       ) : log.print_type === 'image_print' ? (
-        <View style={styles.bottomActions}>
+        <View style={[styles.bottomActions, { paddingBottom: insets.bottom + spacing.md }]}>
           <View style={[styles.reprintButton, { backgroundColor: colors.textTertiary }]}>
             <MaterialCommunityIcons name="printer-off" size={22} color={colors.textInverse} />
             <Text style={[typography.button, { color: colors.textInverse, marginLeft: spacing.sm }]}>

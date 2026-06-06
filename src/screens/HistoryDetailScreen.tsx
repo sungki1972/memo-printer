@@ -2,13 +2,13 @@ import React, { useCallback, useState } from 'react';
 import {
   Alert,
   Dimensions,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -121,8 +121,7 @@ export function HistoryDetailScreen({ route, navigation }: Props) {
           <Image
             source={{ uri: record.imageUri }}
             style={styles.image}
-            contentFit="contain"
-            transition={150}
+            resizeMode="contain"
           />
         </View>
 

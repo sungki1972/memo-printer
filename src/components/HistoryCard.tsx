@@ -1,6 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Image } from 'expo-image';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { typography, spacing, radius } from '../theme/typography';
@@ -33,8 +32,7 @@ export function HistoryCard({
       <Image
         source={{ uri: item.imageUri }}
         style={styles.thumbnail}
-        contentFit="cover"
-        transition={150}
+        resizeMode="cover"
       />
 
       <View style={styles.content}>
@@ -50,7 +48,7 @@ export function HistoryCard({
 
         <Text style={[typography.caption, { color: colors.textTertiary, marginTop: 2 }]}>
           {formatRelative(item.createdAt)}
-          {item.jobId ? `  ·  #${item.jobId.slice(-6)}` : ''}
+          {item.jobId ? `  ·  #${String(item.jobId).slice(-6)}` : ''}
         </Text>
 
         <View style={styles.actionRow}>

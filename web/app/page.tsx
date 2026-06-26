@@ -98,6 +98,7 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
+  const [zoom, setZoom] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -133,6 +134,15 @@ export default function Page() {
   useEffect(() => {
     if (authed) load(1);
   }, [authed, load]);
+
+  useEffect(() => {
+    if (!zoom) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setZoom(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [zoom]);
 
   if (!ready) return null;
   if (!authed) return <PinGate onPass={() => setAuthed(true)} />;
@@ -192,9 +202,20 @@ export default function Page() {
               <div className="memo empty">{l.content || '(내용 없음)'}</div>
             )}
 
-            {l.image_url && (
+            {l.image_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img className="thumb" src={l.image_url} alt="인쇄 이미지" loading="lazy" />
+              <img
+                className="thumb"
+                src={l.image_url}
+                alt="인쇄 이미지"
+                loading="lazy"
+                onClick={() => setZoom(l.image_url!)}
+                title="클릭하면 크게 보기"
+              />
+            ) : (
+              l.print_type === 'image_print' && (
+                <div className="noimg">🖼 이미지 인쇄 · 미리보기 없음</div>
+              )
             )}
 
             {l.error_message && <div className="err">오류: {l.error_message}</div>}
@@ -218,6 +239,16 @@ export default function Page() {
           <button onClick={() => load(page + 1)} disabled={loading || !hasNext}>
             다음 →
           </button>
+        </div>
+      )}
+
+      {zoom && (
+        <div className="lightbox" onClick={() => setZoom(null)}>
+          <button className="lightbox-close" aria-label="닫기" onClick={() => setZoom(null)}>
+            ✕
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="lightbox-img" src={zoom} alt="확대 이미지" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
     </div>
